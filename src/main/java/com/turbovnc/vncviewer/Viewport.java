@@ -29,6 +29,21 @@ import com.turbovnc.rfb.*;
 import com.turbovnc.rfb.Cursor;
 
 public class Viewport extends JFrame {
+    private JFrame viewportFrame = this; // JW
+
+    @SuppressWarnings({"unchecked", "rawtypes"}) // JW
+    public static void enableOSXFullscreen(Window window) { // JW
+        //Preconditions.checkNotNull(window); // JW
+        try { // JW
+            Class util = Class.forName("com.apple.eawt.FullScreenUtilities"); // JW
+            Class params[] = new Class[]{Window.class, Boolean.TYPE}; // JW
+            Method method = util.getMethod("setWindowCanFullScreen", params); // JW
+            method.invoke(util, window, true); // JW
+        } catch (ClassNotFoundException e1) { // JW
+        } catch (java.lang.NoSuchMethodException nsme) { // JW
+        } catch (java.lang.IllegalAccessException iae) { // JW
+        } catch (java.lang.reflect.InvocationTargetException ite) { // JW
+        } // JW
 
   public Viewport(CConn cc_) {
     cc = cc_;
@@ -117,6 +132,11 @@ public class Viewport extends JFrame {
         repaint();
       }
     });
+    if (System.getProperty("os.name").startsWith("Mac")) // JW
+        enableOSXFullscreen(viewportFrame); // JW
+
+    au.org.massive.launcher.LauncherMainFrame.turboVncViewport = this; // JW
+    au.org.massive.launcher.LauncherMainFrame.turboVncConnection = cc; // JW
   }
 
   public void setChild(DesktopWindow child) {

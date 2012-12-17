@@ -47,10 +47,14 @@ public class Tunnel {
     localPort = TcpSocket.findFreeTcpPort();
     if (localPort == 0)
       throw new ErrorException("Could not obtain free TCP port");
+    opts.tunnelLocalPort = localPortl // JW
 
     if (opts.tunnel) {
       gatewayHost = Hostname.getHost(opts.serverName);
-      remoteHost = "localhost";
+      if (opts.remoteServerName==null) // JW
+        remoteHost = "localhost";
+      else // JW
+        remoteHost = opts.remoteServerName; // JW
     } else {
       gatewayHost = opts.via;
       remoteHost = Hostname.getHost(opts.serverName);
@@ -104,30 +108,53 @@ public class Tunnel {
       }
     }
 
-    // username and passphrase will be given via UserInfo interface.
-    vlog.debug("Opening SSH tunnel through gateway " + gatewayHost);
-    String user = VncViewer.sshUser.getValue();
-    if (user == null)
-      user = (String)System.getProperties().get("user.name");
-    Session session = null;
-    if (user != null && jsch.getIdentityNames().size() > 0) {
-      session = jsch.getSession(user, gatewayHost,
-                                VncViewer.sshPort.getValue());
-      try {
-        session.connect();
-      } catch(com.jcraft.jsch.JSchException e) {
-        System.out.println("Could not authenticate using SSH private key.  Falling back to user/password.");
-        jsch.removeAllIdentity();
-        session = null;
+    vlog.setLevel(100); // for debugging // JW
+ 
+    if (opts.cipher!=null) { // JW
+        session.setConfig("cipher.s2c", opts.cipher); // JW
+        session.setConfig("cipher.c2s", opts.cipher); // JW
+        session.setConfig("CheckCiphers", opts.cipher); // JW
+    } // JW
+
+    // First, TurboVNC tries SSH key authentication. // JW 
+    // The SSH key authentication code is not used by the 
+    // Launcher yet, so we will disable it by supplying a 
+    // non-null password in opts.password, and surrounding
+    // the key authentication code in an if block. // JW
+    Session session = null; // Moved outside of if block by JW.
+    if (opts.password==null) { // JW
+      // username and passphrase will be given via UserInfo interface.
+      vlog.debug("Opening SSH tunnel through gateway " + gatewayHost);
+      String user = VncViewer.sshUser.getValue();
+      if (user == null)
+        user = (String)System.getProperties().get("user.name");
+      //Session session = null; // Moved outside of if block by JW.
+      if (user != null && jsch.getIdentityNames().size() > 0) {
+        session = jsch.getSession(user, gatewayHost,
+                                  VncViewer.sshPort.getValue());
+        try {
+          session.connect();
+        } catch(com.jcraft.jsch.JSchException e) {
+          System.out.println("Could not authenticate using SSH private key.  Falling back to user/password.");
+          jsch.removeAllIdentity();
+          session = null;
+        }
       }
-    }
+    } // JW
+
     if (session == null) {
-      PasswdDialog dlg = new PasswdDialog(new String("SSH Authentication"),
-                                          false, user, false);
-      dlg.promptPassword(new String("SSH Authentication"));
-      session = jsch.getSession(dlg.userEntry.getText(), gatewayHost,
-                                VncViewer.sshPort.getValue());
-      session.setPassword(new String(dlg.passwdEntry.getPassword()));
+      if (opts.username==null || opts.password==null) { // JW
+        PasswdDialog dlg = new PasswdDialog(new String("SSH Authentication"),
+                                            false, user, false);
+        dlg.promptPassword(new String("SSH Authentication"));
+        session = jsch.getSession(dlg.userEntry.getText(), gatewayHost,
+                                  VncViewer.sshPort.getValue());
+        session.setPassword(new String(dlg.passwdEntry.getPassword()));
+      } // JW
+      else { // JW
+        session = jsch.getSession(opts.username, gatewayHost, VncViewer.sshPort.getValue()); // JW
+        session.setPassword(opts.password); // JW
+      } // JW
       session.connect();
     }
     vlog.debug("Forwarding local port " + localPort + " to " + remoteHost +

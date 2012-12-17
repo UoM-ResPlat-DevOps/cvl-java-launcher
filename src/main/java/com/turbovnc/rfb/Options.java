@@ -108,6 +108,10 @@ public class Options {
 
   public void print() {
     printOpt("serverName", serverName);
+    printOpt("remoteServerName", remoteServerName); // JW
+    printOpt("username", username); // JW
+    printOpt("password", "********"); // JW
+    printOpt("cipher", cipher); // JW
     printOpt("port", port);
     printOpt("shared", shared);
     printOpt("viewOnly", viewOnly);
@@ -134,6 +138,11 @@ public class Options {
   }
 
   public String serverName;
+  public String remoteServerName = null; // for tunnel // JW
+  public String username = null; // JW
+  public String password = null; // JW
+  public String cipher = null; // JW
+  public int tunnelLocalPort = 0; // JW
   public int port;
   public boolean shared;
   public boolean viewOnly;
