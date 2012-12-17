@@ -1,0 +1,84 @@
+<project name="MASSIVE Launcher" default="dist" basedir=".">
+
+  <description>
+      Apache ANT build file for MASIVE/CVL Launcher.
+  </description>
+
+  <!-- set global properties for this build -->
+  <property name="src" location="src/main/java/"/>
+  <property name="resources" location="src/main/resources/"/>
+  <property name="build" location="build"/>
+  <property name="dist"  location="dist"/>
+  <!--<property name="main-class" value="au.org.massive.launcher.Launcher"/>-->
+  <!--We want our Git repository to start off with just the TurboVNC code,
+       so we will make VncViewer the maing class for now. -->
+  <property name="main-class" value="com.turbovnc.vncviewer.VncViewer"/>
+  <property name="lib.dir"  location="lib"/>
+
+  <path id="classpath">
+    <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    <!--<fileset dir="${lib.dir}/TurboJPEG" includes="**/*"/>-->
+  </path>
+
+  <target name="init">
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${build}"/>
+  </target>
+
+  <target name="compile" depends="init"
+        description="compile the source "> 
+    <!-- Compile the java code from ${src} into ${build} -->
+    <javac srcdir="${src}" destdir="${build}" classpathref="classpath"/>
+  </target>
+
+  <target name="dist" depends="compile"
+        description="generate the distribution" >
+    <!-- Create the distribution directory -->
+    <mkdir dir="${dist}/lib"/>
+
+    <!-- Copy the TurboVNC timestamp / Manifest file required by the VncViewer class's setVersion method. -->
+    <copy file="${src}/com/turbovnc/vncviewer/timestamp" todir="${build}/com/turbovnc/vncviewer"/>
+    <!-- Copy TurboVNC icon image files. -->
+    <copy todir="${build}/com/turbovnc/vncviewer">
+        <fileset dir="${src}/com/turbovnc/vncviewer" includes="*.png"/>
+    </copy>
+    <!-- Copy MASSIVE Launcher icons etc. -->
+    <!--<copy todir="${build}/au/org/massive/launcher">-->
+        <!--<fileset dir="${resources}/IconPngs" includes="*.png"/>-->
+    <!--</copy>-->
+
+    <!-- Put everything in ${build} into the MassiveLauncher-${DSTAMP}.jar file -->
+    <jar jarfile="${dist}/lib/MassiveLauncher-${DSTAMP}.jar" basedir="${build}">
+        <manifest>
+            <attribute name="Main-Class" value="${main-class}"/>
+        </manifest>
+    </jar>
+  </target>
+
+  <target name="clean"
+        description="clean up" >
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+  </target>
+
+    <!-- The Mac OS X TurboVNC Java Viewer app uses the following Java
+    Virtual Machine options when launching the Java viewer.
+    In particulary, note that the Java Native Interface (JNI) is used
+    for TurboJPEG, and that the TurboJPEG folder below contains a 
+    libturbojpeg.jni file and a libturbojpeg.dylib (Mac OS X shared 
+    library file).-->
+    <!--<string>-server -d64 -Djava.library.path=$APP_PACKAGE/Contents/Resources/TurboJPEG</string>-->
+
+  <target name="run" depends="dist">
+    <java fork="true" classname="${main-class}">
+        <classpath>
+            <path refid="classpath"/>
+            <path location="${dist}/lib/MassiveLauncher-${DSTAMP}.jar"/>
+        </classpath>
+    </java>
+  </target>
+</project>
+
