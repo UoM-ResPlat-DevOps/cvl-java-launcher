@@ -47,7 +47,7 @@ public class Tunnel {
     localPort = TcpSocket.findFreeTcpPort();
     if (localPort == 0)
       throw new ErrorException("Could not obtain free TCP port");
-    opts.tunnelLocalPort = localPortl // JW
+    opts.tunnelLocalPort = localPort; // JW
 
     if (opts.tunnel) {
       gatewayHost = Hostname.getHost(opts.serverName);
@@ -110,22 +110,17 @@ public class Tunnel {
 
     vlog.setLevel(100); // for debugging // JW
  
-    if (opts.cipher!=null) { // JW
-        session.setConfig("cipher.s2c", opts.cipher); // JW
-        session.setConfig("cipher.c2s", opts.cipher); // JW
-        session.setConfig("CheckCiphers", opts.cipher); // JW
-    } // JW
-
     // First, TurboVNC tries SSH key authentication. // JW 
     // The SSH key authentication code is not used by the 
     // Launcher yet, so we will disable it by supplying a 
     // non-null password in opts.password, and surrounding
     // the key authentication code in an if block. // JW
     Session session = null; // Moved outside of if block by JW.
+    String user = VncViewer.sshUser.getValue(); // Moved outside of if block by JW.
     if (opts.password==null) { // JW
       // username and passphrase will be given via UserInfo interface.
       vlog.debug("Opening SSH tunnel through gateway " + gatewayHost);
-      String user = VncViewer.sshUser.getValue();
+      // String user = VncViewer.sshUser.getValue(); // JW
       if (user == null)
         user = (String)System.getProperties().get("user.name");
       //Session session = null; // Moved outside of if block by JW.
@@ -154,6 +149,11 @@ public class Tunnel {
       else { // JW
         session = jsch.getSession(opts.username, gatewayHost, VncViewer.sshPort.getValue()); // JW
         session.setPassword(opts.password); // JW
+      } // JW
+      if (opts.cipher!=null) { // JW
+          session.setConfig("cipher.s2c", opts.cipher); // JW
+          session.setConfig("cipher.c2s", opts.cipher); // JW
+          session.setConfig("CheckCiphers", opts.cipher); // JW
       } // JW
       session.connect();
     }

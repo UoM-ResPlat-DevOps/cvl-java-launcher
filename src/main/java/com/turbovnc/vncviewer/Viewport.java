@@ -28,6 +28,8 @@ import com.turbovnc.rdr.*;
 import com.turbovnc.rfb.*;
 import com.turbovnc.rfb.Cursor;
 
+import java.lang.reflect.Method; // JW
+
 public class Viewport extends JFrame {
     private JFrame viewportFrame = this; // JW
 
@@ -44,6 +46,7 @@ public class Viewport extends JFrame {
         } catch (java.lang.IllegalAccessException iae) { // JW
         } catch (java.lang.reflect.InvocationTargetException ite) { // JW
         } // JW
+    } // JW
 
   public Viewport(CConn cc_) {
     cc = cc_;
