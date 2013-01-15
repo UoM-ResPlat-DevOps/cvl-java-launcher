@@ -697,12 +697,14 @@ public class LauncherMainFrame extends JFrame
         cvlPanel.add(new JLabel("Host"), cc.xy(2,2));
         String cvlHosts[] = {
             "115.146.93.198",
-            "115.146.94.0"
+            "115.146.94.0",
+            "115.146.85.189"
         };
         cvlHostsComboBox.setModel(new DefaultComboBoxModel(cvlHosts));
         if (Arrays.asList(cvlHosts).contains(cvlHost))
             cvlHostsComboBox.setSelectedItem(cvlHost);
         cvlHostsComboBox.setEditable(true);
+        cvlHostsComboBox.setSelectedItem(cvlHost);
         cvlPanel.add(cvlHostsComboBox, cc.xy(4,2));
 
         cvlPanel.add(new JLabel("Display number"), cc.xy(2,4));
