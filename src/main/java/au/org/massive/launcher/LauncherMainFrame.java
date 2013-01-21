@@ -27,6 +27,10 @@ import com.turbovnc.vncviewer.VncViewer;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
+import au.org.massive.launcher.VersionNumberCheck;
+import au.org.massive.launcher.LauncherVersionNumber;
+import au.org.massive.launcher.HtmlOptionPane;
+
 public class LauncherMainFrame extends JFrame
 {
     private Class launcherMainFrameClass = getClass();
@@ -91,6 +95,21 @@ public class LauncherMainFrame extends JFrame
 
     public LauncherMainFrame()
     {
+        VersionNumberCheck versionNumberCheck = new VersionNumberCheck();
+
+        String versionNumberFromWebPage = new VersionNumberCheck().getVersionNumberFromWebPage();
+        if (!LauncherVersionNumber.javaLauncherVersionNumber.equals(versionNumberFromWebPage))
+        {
+            Icon massiveIcon = new ImageIcon(launcherMainFrameClass.getResource("MASSIVElogoTransparent64x64.png"));
+            String htmlContent = "You are running version " + LauncherVersionNumber.javaLauncherVersionNumber + "<br><br>" +
+                                    "The latest version is " + versionNumberFromWebPage + "<br><br>" +
+                                                "Please download a new version from:<br><br>" +
+                                                "<a href=\"https://www.massive.org.au/userguide/cluster-instructions/massive-launcher\">https://www.massive.org.au/userguide/cluster-instructions/massive-launcher</a>";
+            //JOptionPane.showMessageDialog(this, message, "MASSIVE/CVL Launcher Error", JOptionPane.ERROR_MESSAGE, massiveIcon);
+            HtmlOptionPane.showMessageDialog(this, htmlContent, "MASSIVE/CVL Launcher Error", JOptionPane.ERROR_MESSAGE, massiveIcon);
+            System.exit(0);
+        }
+
         massiveHost = prefs.get("massiveHost", "");
         massiveProject = prefs.get("massiveProject", "");
         massiveHoursRequested = prefs.get("massiveHoursRequested", "4");
@@ -302,9 +321,11 @@ public class LauncherMainFrame extends JFrame
                                 //  Instead of determining whether qsub is run in interactive mode
                                 //  or batch mode, the "persistent mode" checkbox could simply determine
                                 //  whether the Launcher performs a qdel when it exits.
-                                //  A new option at the end of request_visnode.sh says whether to run qpeek.
-                                //  The Launcher is using False, because it will run qpeek later.
-                                RemoteCommand qsubCommand = new RemoteCommand("/usr/local/desktop/request_visnode.sh " + massiveProject + " " + massiveHoursRequested + " " + massiveVisNodesRequested + " " + (massivePersistentMode?"True":"True") + " False &");
+                                //  Two new options at the end of request_visnode.sh specify whether 
+                                //  request_visnode.sh should run qstat (to monitor whether the job has started)
+                                //  and qpeek to get the output from the job once it has started.
+                                //  The Launcher is using False False, because it will run qstat and qpeek later.
+                                RemoteCommand qsubCommand = new RemoteCommand("/usr/local/desktop/request_visnode.sh " + massiveProject + " " + massiveHoursRequested + " " + massiveVisNodesRequested + " " + (massivePersistentMode?"True":"True") + " False False &");
 
                                 sendRequestVisnodeCommandAndParseOutput(session, qsubCommand, launcherLogWindowTextArea);
 
