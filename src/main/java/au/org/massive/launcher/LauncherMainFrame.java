@@ -496,10 +496,10 @@ public class LauncherMainFrame extends JFrame
                                             JOptionPane.YES_NO_OPTION,
                                             JOptionPane.INFORMATION_MESSAGE,
                                             massiveIcon,
-                                            new String[]{"Save VNC Session", "Discard VNC Session"},
+                                            new String[]{"Discard VNC Session", "Save VNC Session"},
                                             "default");
 
-                                        if (result==JOptionPane.NO_OPTION)
+                                        if (result==JOptionPane.YES_OPTION)
                                         {
                                             writeToLogWindow(launcherLogWindowTextArea, "Discarding VNC session.\n");
 
