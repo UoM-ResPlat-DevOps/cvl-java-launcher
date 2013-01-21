@@ -1,3 +1,9 @@
+The MASSIVE\ Launcher\ \(Java\).app/ Mac OS X application skeleton,
+including the JavaApplicationStub executable can be created using
+/usr/share/java/Tools/Jar\ Bundler.app, however, you don't need
+to recreate it every time you do a build - just copy the latest
+MassiveLauncher JAR into the existing directory, as described below.
+
 After building with ant from the root directory containing build.xml,
 copy the MassiveLauncher={DATE_STAMP}.jar from dist/lib/
 into mac_build/MASSIVE\ Launcher\ \(Java\).app/Contents/Resources/Java/
