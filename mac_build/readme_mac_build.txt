@@ -4,6 +4,21 @@ including the JavaApplicationStub executable can be created using
 to recreate it every time you do a build - just copy the latest
 MassiveLauncher JAR into the existing directory, as described below.
 
+The TurboJPEG shared library (with two different names for backwards
+compatibiltiy with old Mac OS X Java versions
+(libturbojpeg.dylib and libturbojpeg.jnilib)
+can be copied from lib/TurboJPEG/TurboJpegJNI/MacOSX/
+into mac_build/MASSIVE\ Launcher\ \(Java\).app/Contents/Resources/TurboJPEG/
+
+You can get the latest version of the TurboJPEG shared libraries from:
+http://www.libjpeg-turbo.org/DeveloperInfo/PreReleases
+or 
+http://sourceforge.net/projects/libjpeg-turbo/
+
+From http://www.libjpeg-turbo.org/About/TurboJPEG,
+"The Java interface for libjpeg-turbo is written on top of the TurboJPEG API."
+
+
 After building with ant from the root directory containing build.xml,
 copy the MassiveLauncher={DATE_STAMP}.jar from dist/lib/
 into mac_build/MASSIVE\ Launcher\ \(Java\).app/Contents/Resources/Java/
