@@ -31,6 +31,10 @@
     <javac srcdir="${src}" destdir="${build}" classpathref="classpath">
         <!-- <compilerarg value="-Xlint:unchecked" /> -->
     </javac>
+    <copy todir="${build}">
+        <fileset dir="src" includes="*.properties"/>
+    </copy>
+
   </target>
 
   <target name="dist" depends="compile"
@@ -74,7 +78,6 @@
 
   <target name="run" depends="dist">
     <java fork="true" classname="${main-class}">
-        <sysproperty key="log4j.debug" value="true" />
         <classpath>
             <path refid="classpath"/>
             <path location="${dist}/lib/MassiveLauncher-${DSTAMP}.jar"/>

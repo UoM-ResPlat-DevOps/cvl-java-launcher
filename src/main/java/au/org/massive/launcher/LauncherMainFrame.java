@@ -27,9 +27,7 @@ import com.turbovnc.vncviewer.VncViewer;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.log4j.Logger;
 
 import au.org.massive.launcher.VersionNumberCheck;
 import au.org.massive.launcher.LauncherVersionNumber;
@@ -51,7 +49,7 @@ public class LauncherMainFrame extends JFrame
     //   (2) Carlo is designing a new logging system.
     private JFrame launcherLogWindow = new JFrame("MASSIVE/CVL Launcher Log Window");
     private JTextArea launcherLogWindowTextArea = new JTextArea();
-    private static Logger logger = LogManager.getLogger(LauncherMainFrame.class);
+    private static Logger logger = Logger.getLogger(LauncherMainFrame.class);
 
     private JTabbedPane tabbedPane = new JTabbedPane();
 
@@ -100,9 +98,6 @@ public class LauncherMainFrame extends JFrame
 
     public LauncherMainFrame()
     {
-        logger.debug("hello");
-        System.out.println("Logged hello");
-
         VersionNumberCheck versionNumberCheck = new VersionNumberCheck();
 
         String versionNumberFromWebPage = new VersionNumberCheck().getVersionNumberFromWebPage();
@@ -784,9 +779,7 @@ public class LauncherMainFrame extends JFrame
 
     private void writeToLogWindow(final JTextArea textArea, final String text)
     {
-        logger.debug(text);
-        System.out.print("Attempted to log: ");
-        System.out.println(text);
+        logger.info(text);
 
         SwingUtilities.invokeLater(new Runnable()
         {
