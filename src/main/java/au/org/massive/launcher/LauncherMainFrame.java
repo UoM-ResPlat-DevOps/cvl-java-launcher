@@ -30,6 +30,13 @@ import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
 import org.apache.log4j.Logger;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.impl.client.DefaultHttpClient;
+
 import au.org.massive.launcher.VersionNumberCheck;
 import au.org.massive.launcher.LauncherVersionNumber;
 import au.org.massive.launcher.HtmlOptionPane;
@@ -1106,5 +1113,25 @@ public class LauncherMainFrame extends JFrame
             this.channelWasClosed = channelWasClosed;
         }
     }
+
+    private void submitLogfile()
+    {
+        try {
+            HttpClient httpclient = new DefaultHttpClient();
+            HttpPost httppost = new HttpPost("https://cvl.massive.org.au/cgi-bin/log_drop.py");
+            FileBody logfile = new FileBody(new File("/tmp/test.txt")); // FIXME point to actual logfile or stream or whatever.
+
+            MultipartEntity reqEntity = new MultipartEntity();
+            reqEntity.addPart("logfile", logfile);
+            httppost.setEntity(reqEntity);
+
+            HttpResponse response = httpclient.execute(httppost);
+            InputStream result = response.getEntity().getContent();
+        } catch (IOException e) {
+            // FIXME What can we sensibly do here?
+            // e.printStackTrace();
+        }
+    }
+
 }
 
