@@ -23,6 +23,7 @@ import com.jcraft.jsch.*;
 import com.turbovnc.rfb.Options;
 import com.turbovnc.vncviewer.Tunnel;
 import com.turbovnc.vncviewer.VncViewer;
+import com.turbovnc.vncviewer.OptionsDialog;
 
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
@@ -35,9 +36,13 @@ public class LauncherMainFrame extends JFrame
 {
     private Class launcherMainFrameClass = getClass();
 
+    private LauncherMainFrame launcherMainFrame = this;
+
     // JW has modified TurboVNC's com.turbovnc.vncviewer.Viewport class to write to these variables.
     public static JFrame turboVncViewport = null;
     public static com.turbovnc.vncviewer.CConn turboVncConnection = null;
+    
+    private OptionsDialog options;
 
     private Preferences prefs = Preferences.userNodeForPackage(au.org.massive.launcher.LauncherMainFrame.class);
 
@@ -142,6 +147,18 @@ public class LauncherMainFrame extends JFrame
 
         JPanel buttonsPanel = new JPanel();
         JButton optionsButton = new JButton("Options...");
+
+        options = new OptionsDialog(null);
+        options.initDialog();
+
+        optionsButton.addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ae)
+            {
+                 options.showDialog(launcherMainFrame);
+            }
+        });
+
         JButton cancelButton = new JButton("Cancel");
         cancelButton.addActionListener(new ActionListener()
         {

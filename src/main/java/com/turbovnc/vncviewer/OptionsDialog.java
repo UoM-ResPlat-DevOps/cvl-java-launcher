@@ -31,7 +31,7 @@ import javax.swing.border.*;
 
 import com.turbovnc.rfb.*;
 
-class OptionsDialog extends Dialog implements ActionListener, ChangeListener,
+public class OptionsDialog extends Dialog implements ActionListener, ChangeListener,
   ItemListener {
 
   // Constants
