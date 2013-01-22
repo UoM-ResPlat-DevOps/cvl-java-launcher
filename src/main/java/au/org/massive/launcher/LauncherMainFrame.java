@@ -27,6 +27,9 @@ import com.turbovnc.vncviewer.VncViewer;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import au.org.massive.launcher.VersionNumberCheck;
 import au.org.massive.launcher.LauncherVersionNumber;
 import au.org.massive.launcher.HtmlOptionPane;
@@ -95,6 +98,10 @@ public class LauncherMainFrame extends JFrame
 
     public LauncherMainFrame()
     {
+
+        Logger logger = LogManager.getLogger("HelloWorld");
+        logger.info("Hello, World!");
+
         VersionNumberCheck versionNumberCheck = new VersionNumberCheck();
 
         String versionNumberFromWebPage = new VersionNumberCheck().getVersionNumberFromWebPage();
