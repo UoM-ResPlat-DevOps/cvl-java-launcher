@@ -28,6 +28,8 @@ import com.turbovnc.vncviewer.OptionsDialog;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
+import org.apache.log4j.Logger;
+
 import au.org.massive.launcher.VersionNumberCheck;
 import au.org.massive.launcher.LauncherVersionNumber;
 import au.org.massive.launcher.HtmlOptionPane;
@@ -52,6 +54,7 @@ public class LauncherMainFrame extends JFrame
     //   (2) Carlo is designing a new logging system.
     private JFrame launcherLogWindow = new JFrame("MASSIVE/CVL Launcher Log Window");
     private JTextArea launcherLogWindowTextArea = new JTextArea();
+    private static Logger logger = Logger.getLogger(LauncherMainFrame.class);
 
     private JTabbedPane tabbedPane = new JTabbedPane();
 
@@ -793,6 +796,8 @@ public class LauncherMainFrame extends JFrame
 
     private void writeToLogWindow(final JTextArea textArea, final String text)
     {
+        logger.info(text);
+
         SwingUtilities.invokeLater(new Runnable()
         {
             public void run()
