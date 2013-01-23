@@ -29,6 +29,9 @@ import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.PatternLayout;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -110,6 +113,14 @@ public class LauncherMainFrame extends JFrame
 
     public LauncherMainFrame()
     {
+        Logger.getLogger(LauncherMainFrame.class).getLoggerRepository().resetConfiguration();
+        ConsoleAppender console = new ConsoleAppender();
+        String PATTERN = "%d [%p|%c|%C{1}] %m%n";
+        console.setLayout(new PatternLayout(PATTERN));
+        console.setThreshold(Level.DEBUG);
+        console.activateOptions();
+        Logger.getRootLogger().addAppender(console);
+
         VersionNumberCheck versionNumberCheck = new VersionNumberCheck();
 
         String versionNumberFromWebPage = new VersionNumberCheck().getVersionNumberFromWebPage();
