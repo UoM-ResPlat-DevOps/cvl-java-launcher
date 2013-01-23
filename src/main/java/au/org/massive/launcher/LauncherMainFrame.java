@@ -29,13 +29,14 @@ import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.PatternLayout;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -43,6 +44,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import au.org.massive.launcher.VersionNumberCheck;
 import au.org.massive.launcher.LauncherVersionNumber;
 import au.org.massive.launcher.HtmlOptionPane;
+import au.org.massive.launcher.StringAppender;
 
 public class LauncherMainFrame extends JFrame
 {
@@ -65,6 +67,7 @@ public class LauncherMainFrame extends JFrame
     private JFrame launcherLogWindow = new JFrame("MASSIVE/CVL Launcher Log Window");
     private JTextArea launcherLogWindowTextArea = new JTextArea();
     private static Logger logger = Logger.getLogger(LauncherMainFrame.class);
+    private static StringAppender sAppender = new StringAppender();
 
     private JTabbedPane tabbedPane = new JTabbedPane();
 
@@ -113,13 +116,22 @@ public class LauncherMainFrame extends JFrame
 
     public LauncherMainFrame()
     {
+        // Reset logger configuration.
         Logger.getLogger(LauncherMainFrame.class).getLoggerRepository().resetConfiguration();
-        ConsoleAppender console = new ConsoleAppender();
         String PATTERN = "%d [%p|%c|%C{1}] %m%n";
+
+        // Add a console appender.
+        ConsoleAppender console = new ConsoleAppender();
         console.setLayout(new PatternLayout(PATTERN));
         console.setThreshold(Level.DEBUG);
         console.activateOptions();
         Logger.getRootLogger().addAppender(console);
+
+        // Add a string appender.
+        sAppender.setLayout(new PatternLayout(PATTERN));
+        sAppender.setThreshold(Level.DEBUG);
+        sAppender.activateOptions();
+        Logger.getRootLogger().addAppender(sAppender);
 
         VersionNumberCheck versionNumberCheck = new VersionNumberCheck();
 
@@ -1128,9 +1140,11 @@ public class LauncherMainFrame extends JFrame
     private void submitLogfile()
     {
         try {
+            LogManager.shutdown();
+
             HttpClient httpclient = new DefaultHttpClient();
             HttpPost httppost = new HttpPost("https://cvl.massive.org.au/cgi-bin/log_drop.py");
-            FileBody logfile = new FileBody(new File("/tmp/test.txt")); // FIXME point to actual logfile or stream or whatever.
+            StringBody logfile = new StringBody(sAppender.log.toString());
 
             MultipartEntity reqEntity = new MultipartEntity();
             reqEntity.addPart("logfile", logfile);
