@@ -45,6 +45,7 @@ import au.org.massive.launcher.VersionNumberCheck;
 import au.org.massive.launcher.LauncherVersionNumber;
 import au.org.massive.launcher.HtmlOptionPane;
 import au.org.massive.launcher.StringAppender;
+import au.org.massive.launcher.Pool;
 
 public class LauncherMainFrame extends JFrame
 {
