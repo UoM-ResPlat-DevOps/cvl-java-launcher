@@ -768,6 +768,8 @@ public class LauncherMainFrame extends JFrame
             "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200"
             };
         cvlVncDisplayResolutionComboBox.setModel(new DefaultComboBoxModel(cvlVncDisplayResolutions));
+        if (Arrays.asList(cvlVncDisplayResolutions).contains(cvlVncDisplayResolution))
+            cvlVncDisplayResolutionComboBox.setSelectedItem(cvlVncDisplayResolution);
         cvlVncDisplayResolutionComboBox.setEditable(true);
         cvlPanel.add(cvlVncDisplayResolutionComboBox, cc.xy(4,6));
 
