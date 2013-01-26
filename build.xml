@@ -14,8 +14,7 @@
 
   <path id="classpath">
     <fileset dir="${lib.dir}" includes="**/*.jar"/>
-    <fileset dir="src" includes="*.properties"/>
-    <!--<fileset dir="${lib.dir}/TurboJPEG" includes="**/*"/>-->
+    <!--<fileset dir="${lib.dir}/TurboJPEG" includes="**/*"/> -->
   </path>
 
   <target name="init">
@@ -30,9 +29,6 @@
     <!-- Compile the java code from ${src} into ${build} -->
     <javac srcdir="${src}" destdir="${build}" classpathref="classpath" />
         <!-- <compilerarg value="-Xlint:unchecked" /> -->
-    <copy todir="${build}">
-        <fileset dir="src" includes="*.properties"/>
-    </copy>
   </target>
 
   <target name="dist" depends="compile"
