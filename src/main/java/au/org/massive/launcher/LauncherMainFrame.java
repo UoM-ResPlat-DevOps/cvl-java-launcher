@@ -54,8 +54,23 @@ public class LauncherMainFrame extends JFrame
     private LauncherMainFrame launcherMainFrame = this;
 
     // JW has modified TurboVNC's com.turbovnc.vncviewer.Viewport class to write to these variables.
+    // Making the viewport static restricts the Launcher to only having one TurboVNC window open at a time (for now).
     public static JFrame turboVncViewport = null;
+    // At present, the Launcher only uses the turboVncConnection object
+    // to close the TurboVNC connection.  However, the CConn class contains
+    // callbacks for the TurboVNC Options Dialog, so it would be nice to
+    // be able to use it for that as well.
     public static com.turbovnc.vncviewer.CConn turboVncConnection = null;
+    // If the TurboVNC Options Dialog is to be available outside of the Login thread,
+    // (which it is in the Python Launcher), then we need to initialize a VncViewer
+    // object and a CConn object outside of the login thread, so that we
+    // can make use of the CConn object's OptionsDialogCallback methods.
+    // Ths turboVncViewer object doesn't need to be public, because we 
+    // will initialized it from within the LauncherMainFrame class, i.e.
+    // it won't be written back to LauncherMainFrame by hacking into the
+    // TurboVNC classes.
+    private static com.turbovnc.vncviewer.VncViewer turboVncViewer = null;
+
     
     private OptionsDialog options;
 
@@ -149,6 +164,11 @@ public class LauncherMainFrame extends JFrame
             System.exit(0);
         }
 
+        // Initialize TurboVNC objects, so that we can plug the TurboVNC Options Dialog into the Launcher.
+        //VncViewer.setLookAndFeel();
+        //String[] turboVncArguments = new String[] {};
+        //LauncherMainFrame.turboVncViewer = new VncViewer(turboVncArguments);
+
         massiveHost = prefs.get("massiveHost", "");
         massiveProject = prefs.get("massiveProject", "");
         massiveHoursRequested = prefs.get("massiveHoursRequested", "4");
@@ -182,7 +202,10 @@ public class LauncherMainFrame extends JFrame
         JPanel buttonsPanel = new JPanel();
         JButton optionsButton = new JButton("Options...");
 
-        options = new OptionsDialog(null);
+        // Currently turboVncConnection will be null here,
+        // so the options dialog won't have any usable
+        // callbacks.
+        options = new OptionsDialog(turboVncConnection);
         options.initDialog();
 
         optionsButton.addActionListener(new ActionListener()
@@ -376,9 +399,10 @@ public class LauncherMainFrame extends JFrame
                                 //  request_visnode.sh should run qstat (to monitor whether the job has started)
                                 //  and qpeek to get the output from the job once it has started.
                                 //  The Launcher is using False False, because it will run qstat and qpeek later.
-                                RemoteCommand qsubCommand = new RemoteCommand("/usr/local/desktop/request_visnode.sh " + massiveProject + " " + massiveHoursRequested + " " + massiveVisNodesRequested + " " + (massivePersistentMode?"True":"True") + " False False &");
-
-                                sendRequestVisnodeCommandAndParseOutput(session, qsubCommand, launcherLogWindowTextArea);
+                                RemoteCommand qsubCommand = new RemoteCommand("/usr/local/desktop/request_visnode.sh " + massiveProject + " " + massiveHoursRequested + " " + massiveVisNodesRequested + " " + (massivePersistentMode?"True":"True") + " False False");
+                                sendCommand(session, qsubCommand, true, launcherLogWindowTextArea); 
+                                String[] qsubOutput = qsubCommand.getStdout().split("\n");
+                                massiveJobNumberWithServer = qsubOutput[1];
 
                                 writeToLogWindow(launcherLogWindowTextArea, "\n");
 
@@ -536,6 +560,7 @@ public class LauncherMainFrame extends JFrame
                             // Launch TurboVNC:
                             
                             VncViewer.main(turboVncArguments);
+                            //turboVncViewer.start();
 
                             // JW has hacked TurboVNC's
                             // com.turbovnc.vncviewer.Viewport class
@@ -915,167 +940,6 @@ public class LauncherMainFrame extends JFrame
         return remoteCommand.getStdout();
     }
 
-    private void sendRequestVisnodeCommandAndParseOutput(Session session, RemoteCommand qsubCommand, JTextArea launcherLogWindowTextArea)
-    {
-
-        StringBuilder commandStdoutBuffer = new StringBuilder();
-
-        try
-        {
-            Channel channel = session.openChannel("exec");
-            writeToLogWindow(launcherLogWindowTextArea, qsubCommand.getCommand() + "\n");
-            ((ChannelExec) channel).setCommand(qsubCommand.getCommand());
-
-            channel.setOutputStream(null);
-
-            // Direct stderr output of command
-            InputStream fromChannelStderrStream = ((ChannelExec)channel).getErrStream();
-            InputStreamReader fromChannelStderrStreamReader = new InputStreamReader(fromChannelStderrStream, "UTF-8");
-            BufferedReader fromChannelStderrBufferedReader = new BufferedReader(fromChannelStderrStreamReader);
-
-            // Direct stdout output of command
-            InputStream fromChannelStdoutStream = channel.getInputStream();
-            InputStreamReader fromChannelStdoutStreamReader = new InputStreamReader(fromChannelStdoutStream, "UTF-8");
-            BufferedReader fromChannelStdoutBufferedReader = new BufferedReader(fromChannelStdoutStreamReader);
-
-            channel.connect();
-
-            byte[] tmp = new byte[1024];
-            String stdoutLineFragment = "";
-            String stderrLineFragment = "";
-            int stdoutLineNumber = 0;
-            int jobidFullLineNumber = -1;
-            boolean breakOutOfMainLoop = false;
-            while (true)
-            {
-                
-                while (fromChannelStderrStream.available() > 0)
-                {
-                    // 1. Read from STDERR stream until we encounter a newline
-                    //    or until no more data is available on the stream.
-                    
-                    int ch;
-                    //System.out.println("Reading from STDERR...");
-                    StringBuilder temporaryStderrBuffer = new StringBuilder();
-                    while (fromChannelStderrStream.available() > 0 && (ch = fromChannelStderrBufferedReader.read()) > -1)
-                    {
-                        temporaryStderrBuffer.append((char)ch);
-                        if (ch=='\n')
-                            break;
-                    }
-                    String stderrLine = stderrLineFragment + temporaryStderrBuffer.toString();
-                    //System.out.println("Finished reading from STDERR...");
-
-                    // 2. If we have read in a full line of STDERR, display it on the log window.
-                    
-                    if (stderrLine.endsWith("\n"))
-                    {
-                        writeToLogWindow(launcherLogWindowTextArea, "request_visnode.sh stderrLine: " + stderrLine);
-                        stderrLineFragment = ""; 
-                    }
-
-                    //    3. If we only read in a partial line, save the line fragment to be
-                    //    pasted together with the next characters read from the stream.
-                    
-                    if (!stderrLine.endsWith("\n"))
-                        stderrLineFragment = stderrLine;
-                }
-
-                while (fromChannelStdoutStream.available() > 0)
-                {
-                    // 1. Read from STDOUT stream until we encounter a newline
-                    //    or until no more data is available on the stream.
-                    
-                    int ch;
-                    //System.out.println("Reading from STDOUT...");
-                    StringBuilder temporaryStdoutBuffer = new StringBuilder();
-                    while (fromChannelStdoutStream.available() > 0 && (ch = fromChannelStdoutBufferedReader.read()) > -1)
-                    {
-                        //System.out.println(String.format("int(ch) = %d, ch=%c\n",ch,ch));
-                        temporaryStdoutBuffer.append((char)ch);
-                        if (ch=='\n')
-                            break;
-                    }
-                    //System.out.println("Finished reading from STDOUT...");
-                    String stdoutLine = stdoutLineFragment + temporaryStdoutBuffer.toString();
-
-                    // 2. If we have read in a full line of STDOUT, save it to the commandStdoutBuffer.
-                    
-                    if (stdoutLine.endsWith("\n"))
-                    {
-                        stdoutLineNumber += 1;
-                        //writeToLogWindow(launcherLogWindowTextArea, "request_visnode.sh stdoutLine: " + stdoutLine);
-                        //System.out.print("request_visnode.sh stdoutLine: " + stdoutLine);
-                        //if (jobidFullLineNumber==-1 && stdoutLine.contains("jobid_full"))
-                            //writeToLogWindow(launcherLogWindowTextArea, "Found jobid_full (1).\n");
-                        stdoutLineFragment = ""; 
-                        commandStdoutBuffer.append(stdoutLine);
-                    }
-
-                    //    3. If we only read in a partial line, save the line fragment to be
-                    //    pasted together with the next characters read from the stream, and
-                    //    continue to the next iteration.
-                    
-                    if (!stdoutLine.endsWith("\n"))
-                    {
-                        stdoutLineFragment = stdoutLine;
-                        continue;
-                    }
-
-                    //    4. Check whether the stdoutLine we just read in is of interest.
-                    //       and react appropriately, e.g. display it in the Log window.
-                    
-                    if (stdoutLine.toLowerCase().contains("error"))
-                        writeToLogWindow(launcherLogWindowTextArea, stdoutLine);
-
-                    if (jobidFullLineNumber==-1 && stdoutLine.contains("jobid_full"))
-                        jobidFullLineNumber = stdoutLineNumber;
-
-                    if (stdoutLineNumber == (jobidFullLineNumber + 1))
-                    {
-                        massiveJobNumberWithServer = stdoutLine.trim();
-                        breakOutOfMainLoop = true;
-                    }
-
-                    //    5. If we found the qsub job number, then we can stop looking at the 
-                    //       output of request_visnode.sh, and return to the login thread, where 
-                    //       we can pause for a bit, and then call qpeek to check on our job.
-                    
-                    if (breakOutOfMainLoop)
-                        break;
-                }
-
-                if (breakOutOfMainLoop)
-                    break;
-
-                if (channel.isClosed())
-                {
-                    System.out.println("request_visnode.sh: The SSH channel was closed.");
-                    qsubCommand.setChannelWasClosed(true);
-                    qsubCommand.setExitCode(channel.getExitStatus());
-                    break;
-                }
-                try
-                {
-                    Thread.sleep(1000);
-                } 
-                catch (Exception ee)
-                {
-                    throw new JSchException("Cannot execute remote command: " + qsubCommand.getCommand() + " : " + ee.getMessage());
-                }
-            }
-
-            channel.disconnect();
-
-        }
-        catch (Exception e)
-        {
-            System.out.println(e);
-        }
-
-        qsubCommand.setStdout(commandStdoutBuffer.toString());
-    }
-
     private class RemoteCommand
     {
         private String command = "";
@@ -1160,6 +1024,5 @@ public class LauncherMainFrame extends JFrame
             // e.printStackTrace();
         }
     }
-
 }
 
