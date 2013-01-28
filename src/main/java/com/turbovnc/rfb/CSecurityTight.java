@@ -123,7 +123,19 @@ public class CSecurityTight extends CSecurity {
         StringBuffer username = new StringBuffer();
         StringBuffer password = new StringBuffer();
 
-        CConn.upg.getUserPasswd(username, password);
+        // JW: Launcher passes in username and password as properties of Options object,
+        // so there's no need to pop up a dialog asking for a username
+        // and password if they are already recorded within the Options object.
+        // Cast cc object as CConn, so we access to opts
+        CConn cconn = (CConn) cc;
+        if (cconn.opts.username==null || cconn.opts.username.equals("") ||
+            cconn.opts.password==null || cconn.opts.password.equals(""))
+          CConn.upg.getUserPasswd(username, password);
+        else
+        {
+          username.append(cconn.opts.username);
+          password.append(cconn.opts.password);
+        }
 
         // Return the response to the server
         os.writeU32(username.length());

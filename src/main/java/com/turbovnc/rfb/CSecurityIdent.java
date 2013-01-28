@@ -31,7 +31,15 @@ public class CSecurityIdent extends CSecurity {
 
     StringBuffer username = new StringBuffer();
 
-    CConn.upg.getUserPasswd(username, null);
+    // JW: Launcher passes in username as property of Options object,
+    // so there's no need to pop up a dialog asking for a username
+    // if it is already recorded within the Options object.
+    // Cast cc object as CConn, so we access to opts
+    CConn cconn = (CConn) cc;
+    if (cconn.opts.username==null || cconn.opts.username.equals(""))
+      CConn.upg.getUserPasswd(username, null);
+    else
+      username.append(cconn.opts.username);
 
     // Return the response to the server
     os.writeU32(username.length());

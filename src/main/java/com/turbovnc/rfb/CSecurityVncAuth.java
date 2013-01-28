@@ -34,8 +34,16 @@ public class CSecurityVncAuth extends CSecurity {
     // Read the challenge & obtain the user's password
     byte[] challenge = new byte[VNC_AUTH_CHALLENGE_SIZE];
     is.readBytes(challenge, 0, VNC_AUTH_CHALLENGE_SIZE);
+    // JW: Launcher passes in password as property of Options object,
+    // so there's no need to pop up a dialog asking for a username
+    // and password, if they are already recorded within the Options object.
     StringBuffer passwd = new StringBuffer();
-    CConn.upg.getUserPasswd(null, passwd);
+    // Cast cc object as CConn, so we access to opts
+    CConn cconn = (CConn) cc;
+    if (cconn.opts.password==null || cconn.opts.password.equals(""))
+      CConn.upg.getUserPasswd(null, passwd);
+    else
+      passwd.append(cconn.opts.password);
 
     // Calculate the correct response
     byte[] key = new byte[8];
