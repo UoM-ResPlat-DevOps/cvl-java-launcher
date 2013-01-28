@@ -814,10 +814,12 @@ public class VncViewer extends java.applet.Applet implements Runnable {
   Socket sock;
   boolean applet;
   Image logo;
-  static int nViewers;
+  // JW made nViewers public to allow access from outside of the com.turbovnc.vncviewer package.
+  public static int nViewers;
   static LogWriter vlog = new LogWriter("main");
   FileInStream benchFile;
   int benchIter = 1;
   int benchWarmup = 0;
-  Options opts;
+  // JW made opts public to allow access from outside of the com.turbovnc.vncviewer package.
+  public Options opts;
 }

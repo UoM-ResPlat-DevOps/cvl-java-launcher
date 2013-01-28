@@ -73,18 +73,19 @@ public class CConn extends CConnection implements UserPasswdGetter, UserMsgBox,
 
   public CConn(VncViewer viewer_, Socket sock_) {
     sock = sock_;  viewer = viewer_;
+    opts = new Options(viewer.opts);
     benchmark = viewer.benchFile != null;
     pendingPFChange = false;
     lastServerEncoding = -1;
 
-    opts = new Options(viewer.opts);
-
     formatChange = false; encodingChange = false;
     currentEncoding = opts.preferredEncoding;
     showToolbar = VncViewer.showToolbar.getValue();
+    // Important to initialize because getOptions()
+    // refers to clipboardDialog
+    clipboardDialog = new ClipboardDialog(this);
     options = new OptionsDialog(this);
     options.initDialog();
-    clipboardDialog = new ClipboardDialog(this);
     firstUpdate = true; pendingUpdate = false; continuousUpdates = false;
     forceNonincremental = true; supportsSyncFence = false;
 
@@ -97,7 +98,54 @@ public class CConn extends CConnection implements UserPasswdGetter, UserMsgBox,
     cp.supportsSetDesktopSize = true;
     cp.supportsClientRedirect = true;
     cp.supportsDesktopRename = true;
+    
+    // Important to initialize because getOptions()
+    // refers to F8Menu
     initMenu();
+
+    initCConn(viewer_, sock_);
+  }
+
+  public CConn(VncViewer viewer_, Socket sock_, boolean performInitialisation_) {
+    sock = sock_;  viewer = viewer_;
+    opts = new Options(viewer.opts);
+    benchmark = viewer.benchFile != null;
+    pendingPFChange = false;
+    lastServerEncoding = -1;
+
+    formatChange = false; encodingChange = false;
+    currentEncoding = opts.preferredEncoding;
+    showToolbar = VncViewer.showToolbar.getValue();
+    // Important to initialize because getOptions()
+    // refers to clipboardDialog
+    clipboardDialog = new ClipboardDialog(this);
+    options = new OptionsDialog(this);
+    options.initDialog();
+    firstUpdate = true; pendingUpdate = false; continuousUpdates = false;
+    forceNonincremental = true; supportsSyncFence = false;
+
+    setShared(opts.shared);
+    upg = this;
+    msg = this;
+
+    cp.supportsDesktopResize = true;
+    cp.supportsExtendedDesktopSize = true;
+    cp.supportsSetDesktopSize = true;
+    cp.supportsClientRedirect = true;
+    cp.supportsDesktopRename = true;
+    
+    // Important to initialize because getOptions()
+    // refers to F8Menu
+    initMenu();
+
+    if (performInitialisation_)
+        initCConn(viewer_, sock_);
+  }
+
+  // Renaming CConn constructor to "initCConn"
+  // so that it can be called by multiple constructors.
+  //public CConn(VncViewer viewer_, Socket sock_) {
+  public void initCConn(VncViewer viewer_, Socket sock_) {
 
     if (sock != null) {
       String name = sock.getPeerEndpoint();
@@ -1466,15 +1514,28 @@ public class CConn extends CConnection implements UserPasswdGetter, UserMsgBox,
   // thread after the window has been destroyed.
   boolean shuttingDown = false;
 
+  // JW: Accessor method for Launcher.
+  public boolean shuttingDown()
+  {
+      return shuttingDown;
+  }
+
   // All menu, options, about and info stuff is done in the GUI thread (apart
   // from when constructed).
   F8Menu menu;
   OptionsDialog options;
 
+  // JW: Accessor method for Launcher.
+  public OptionsDialog getOptionsDialog()
+  {
+      return options;
+  }
+
   // clipboard sync issues?
   ClipboardDialog clipboardDialog;
 
-  Options opts;
+  // JW made opts public so it can be accessed from outside of the com.turbovnc.* packages.
+  public Options opts;
 
   // the following are only ever accessed by the GUI thread:
   int buttonMask;

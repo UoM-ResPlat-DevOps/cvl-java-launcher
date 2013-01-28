@@ -23,6 +23,7 @@ import com.jcraft.jsch.*;
 import com.turbovnc.rfb.Options;
 import com.turbovnc.vncviewer.Tunnel;
 import com.turbovnc.vncviewer.VncViewer;
+import com.turbovnc.vncviewer.CConn;
 import com.turbovnc.vncviewer.OptionsDialog;
 
 import org.apache.xmlrpc.client.XmlRpcClient;
@@ -60,7 +61,7 @@ public class LauncherMainFrame extends JFrame
     // to close the TurboVNC connection.  However, the CConn class contains
     // callbacks for the TurboVNC Options Dialog, so it would be nice to
     // be able to use it for that as well.
-    public static com.turbovnc.vncviewer.CConn turboVncConnection = null;
+    public static CConn turboVncConnection = null;
     // If the TurboVNC Options Dialog is to be available outside of the Login thread,
     // (which it is in the Python Launcher), then we need to initialize a VncViewer
     // object and a CConn object outside of the login thread, so that we
@@ -165,9 +166,14 @@ public class LauncherMainFrame extends JFrame
         }
 
         // Initialize TurboVNC objects, so that we can plug the TurboVNC Options Dialog into the Launcher.
-        //VncViewer.setLookAndFeel();
-        //String[] turboVncArguments = new String[] {};
-        //LauncherMainFrame.turboVncViewer = new VncViewer(turboVncArguments);
+        VncViewer.setLookAndFeel();
+        String[] turboVncArguments = new String[] {};
+        LauncherMainFrame.turboVncViewer = new VncViewer(turboVncArguments);
+        // For now, we are only allowing one connection per Launcher instance, so makeing turboVncConnection static is OK.
+        boolean performInitialisation = false;
+        // In TurboVNC, the CConn object would normally be created from the worker thread, equivalent of our login thread.
+        // But we can't do that if we want the Options Dialog callbacks to be available before the login thread has commenced.
+        LauncherMainFrame.turboVncConnection = new CConn(LauncherMainFrame.turboVncViewer, null, performInitialisation);
 
         massiveHost = prefs.get("massiveHost", "");
         massiveProject = prefs.get("massiveProject", "");
@@ -202,11 +208,7 @@ public class LauncherMainFrame extends JFrame
         JPanel buttonsPanel = new JPanel();
         JButton optionsButton = new JButton("Options...");
 
-        // Currently turboVncConnection will be null here,
-        // so the options dialog won't have any usable
-        // callbacks.
-        options = new OptionsDialog(turboVncConnection);
-        options.initDialog();
+        options = LauncherMainFrame.turboVncConnection.getOptionsDialog();
 
         optionsButton.addActionListener(new ActionListener()
         {
@@ -455,6 +457,7 @@ public class LauncherMainFrame extends JFrame
                             if (cvlTabSelected)
                             {
                                 remoteCommand = new RemoteCommand("vncsession --vnc tigervnc --geometry \"" + cvlVncDisplayResolution + "\"");
+                                //remoteCommand = new RemoteCommand("vncsession --vnc turbovnc --geometry \"" + cvlVncDisplayResolution + "\"");
                                 if (!cvlVncDisplayNumberAutomatic)
                                     remoteCommand.setCommand(remoteCommand.getCommand() + " --display " + cvlVncDisplayNumber);
                                 sendCommand(session, remoteCommand, true, launcherLogWindowTextArea);
@@ -496,71 +499,92 @@ public class LauncherMainFrame extends JFrame
                             // SSH tunnel
 
                             // TurboVNC options:
-                            Options opts = new Options();
-                            opts.tunnel = true;
+                            turboVncConnection.opts.tunnel = true;
                             if (massiveTabSelected)
-                                opts.cipher = massiveSshTunnelCipher;
+                                turboVncConnection.opts.cipher = massiveSshTunnelCipher;
                             if (cvlTabSelected)
-                                opts.cipher = cvlSshTunnelCipher;
+                                turboVncConnection.opts.cipher = cvlSshTunnelCipher;
 
                             if (massiveTabSelected)
                             {
-                                opts.serverName = massiveHost + ":1";
-                                opts.remoteServerName = massiveVisNode;
-                                opts.port = 5901;
-                                opts.username = massiveUsername;
-                                opts.password = massivePassword;
+                                turboVncConnection.opts.serverName = massiveHost + ":1";
+                                turboVncConnection.opts.remoteServerName = massiveVisNode;
+                                turboVncConnection.opts.port = 5901;
+                                turboVncConnection.opts.username = massiveUsername;
+                                turboVncConnection.opts.password = massivePassword;
                             }
 
                             if (cvlTabSelected)
                             {
-                                opts.serverName = cvlHost + ":" + cvlVncDisplayNumber;
-                                opts.remoteServerName = "localhost";
-                                opts.port = 5900 + Integer.valueOf(cvlVncDisplayNumber);
-                                opts.username = cvlUsername;
-                                opts.password = cvlPassword;
+                                turboVncConnection.opts.serverName = cvlHost + ":" + cvlVncDisplayNumber;
+                                turboVncConnection.opts.remoteServerName = "localhost";
+                                turboVncConnection.opts.port = 5900 + Integer.valueOf(cvlVncDisplayNumber);
+                                turboVncConnection.opts.username = cvlUsername;
+                                turboVncConnection.opts.password = cvlPassword;
                             }
 
                             writeToLogWindow(launcherLogWindowTextArea, "\nAttempting to create tunnel using TurboVNC's tunnel class.");
 
-                            Tunnel.createTunnel(opts);
+                            Tunnel.createTunnel(turboVncConnection.opts);
 
-                            Thread.sleep(1000);
-                            writeToLogWindow(launcherLogWindowTextArea, ".");
-                            Thread.sleep(1000);
-                            writeToLogWindow(launcherLogWindowTextArea, ".");
-                            Thread.sleep(1000);
-                            writeToLogWindow(launcherLogWindowTextArea, ".");
-                            Thread.sleep(1000);
-                            writeToLogWindow(launcherLogWindowTextArea, ".");
-                            Thread.sleep(1000);
-                            writeToLogWindow(launcherLogWindowTextArea, ".");
+                            for (int i=0; i<5; i++)
+                            {
+                                Thread.sleep(1000);
+                                writeToLogWindow(launcherLogWindowTextArea, ".");
+                            }
 
                             writeToLogWindow(launcherLogWindowTextArea, "\n");
 
                             writeToLogWindow(launcherLogWindowTextArea, "Created tunnel using TurboVNC's tunnel class.\n");
 
-                            writeToLogWindow(launcherLogWindowTextArea, "Local port = " + opts.tunnelLocalPort + "\n");
-                            writeToLogWindow(launcherLogWindowTextArea, "Remote port = " + opts.port + "\n");
+                            writeToLogWindow(launcherLogWindowTextArea, "Local port = " + turboVncConnection.opts.tunnelLocalPort + "\n");
+                            writeToLogWindow(launcherLogWindowTextArea, "Remote port = " + turboVncConnection.opts.port + "\n");
 
-                            writeToLogWindow(launcherLogWindowTextArea, "\nLaunching TurboVNC.");
-                            Thread.sleep(1000);
-                            writeToLogWindow(launcherLogWindowTextArea, ".");
-                            Thread.sleep(1000);
-                            writeToLogWindow(launcherLogWindowTextArea, ".");
-                            Thread.sleep(1000);
-                            writeToLogWindow(launcherLogWindowTextArea, ".");
+                            writeToLogWindow(launcherLogWindowTextArea, "\nLaunching TurboVNC.\n");
+                            for (int i=0; i<3; i++)
+                            {
+                                Thread.sleep(1000);
+                                writeToLogWindow(launcherLogWindowTextArea, ".");
+                            }
 
-                            String[] turboVncArguments = null;
-                            if (massiveTabSelected)
-                                turboVncArguments = new String[] {"-encoding","Tight","-user",massiveUsername,"-password",massivePassword,"localhost::" + opts.tunnelLocalPort};
-                            else
-                                turboVncArguments = new String[] {"-encoding","Tight","-user",cvlUsername,"-password",cvlPassword,"localhost::" + opts.tunnelLocalPort};
+                            //String[] turboVncArguments = null;
+                            //if (massiveTabSelected)
+                                //turboVncArguments = new String[] {"-encoding","Tight","-user",massiveUsername,"-password",massivePassword,"localhost::" + turboVncConnection.opts.tunnelLocalPort};
+                            //else
+                                //turboVncArguments = new String[] {"-encoding","Tight","-user",cvlUsername,"-password",cvlPassword,"localhost::" + turboVncConnection.opts.tunnelLocalPort};
 
                             // Launch TurboVNC:
                             
-                            VncViewer.main(turboVncArguments);
-                            //turboVncViewer.start();
+                            //VncViewer.main(turboVncArguments);
+                            // Instead of passing commmand-line arguments, what we really should do, is set the properties in the VncViewer object's opts object, and or CConn's opts object.
+
+                            Thread turboVncThread = new Thread()
+                            {
+                                public void run()
+                                {
+                                    //turboVncConnection.opts.preferredEncoding = com.turbovnc.rfb.Encodings.encodingNum("Tight");
+                                    turboVncConnection.opts.serverName = "localhost::" + turboVncConnection.opts.tunnelLocalPort;
+
+                                    //turboVncConnection.opts.print();
+
+                                    //LauncherMainFrame.turboVncViewer.opts = new Options(turboVncConnection.opts);
+                                    try
+                                    {
+                                        turboVncConnection.initCConn(LauncherMainFrame.turboVncViewer, null);
+                                        while (!turboVncConnection.shuttingDown())
+                                            turboVncConnection.processMsg(false);
+                                        System.exit(0);
+                                    }
+                                    catch(com.turbovnc.rdr.EndOfStream e)
+                                    {
+                                        System.exit(0);
+                                    }
+                                    turboVncConnection.reset();
+                                    System.gc();
+                                }
+                            };
+                            LauncherMainFrame.turboVncViewer.nViewers++;
+                            turboVncThread.start();
 
                             // JW has hacked TurboVNC's
                             // com.turbovnc.vncviewer.Viewport class
@@ -625,25 +649,29 @@ public class LauncherMainFrame extends JFrame
                                         else
                                             writeToLogWindow(launcherLogWindowTextArea, "Saving VNC session for future use.\n");
 
-                                        turboVncConnection.close();
+                                        System.exit(0);
                                     }
                                 });
                             }
 
+                            /*
                             if (massiveTabSelected)
                             {
                                 // Disconnect if not running persistent mode.
-                                //
-                                //if (!massivePersistentMode)
-                                //{
-                                    //writeToLogWindow(launcherLogWindowTextArea, "\n");
-                                    //RemoteCommand qdelCommand = new RemoteCommand("qdel " + massiveJobNumber);
-                                    //sendCommand(session, qdelCommand, true, launcherLogWindowTextArea);
-                                //}
+                                
+                                if (!massivePersistentMode)
+                                {
+                                    writeToLogWindow(launcherLogWindowTextArea, "\n");
+                                    RemoteCommand qdelCommand = new RemoteCommand("qdel " + massiveJobNumber);
+                                    sendCommand(session, qdelCommand, true, launcherLogWindowTextArea);
+                                }
                             }
+                            */
 
+                            /*
                             if (session!=null)
                                 session.disconnect();
+                                */
 
                         }
                         catch(Exception e)
