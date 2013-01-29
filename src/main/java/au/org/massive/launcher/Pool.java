@@ -16,6 +16,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.util.EntityUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.HTTP;
@@ -28,16 +29,35 @@ public class Pool {
     public static void main() {
         try {
             JSONObject jsonObj = new JSONObject();
-            jsonObj.put("username", "testuser12345");
-            jsonObj.put("password", "xxxx");
-            jsonObj.put("vm_type",  "neuroimaging");
+            jsonObj.put("queryMessage", "username=jupitertest1");
+            jsonObj.put("query", "Send to user management");
 
             HttpClient httpclient = new DefaultHttpClient();
-            HttpPost httpPost = new HttpPost("https://cvl.massive.org.au/cvlvm");
+            HttpPost httpPost = new HttpPost("https://cvl.massive.org.au/usermanagement/query.php");
 
-            httpPost.setEntity(new StringEntity(jsonObj.toString(), "application/x-www-form-urlencoded", "UTF-8"));
+            httpPost.setEntity(new StringEntity(jsonObj.toString(), "multipart/form-data", "UTF-8")); // application/x-www-form-urlencoded", "UTF-8"));
 
             HttpResponse response = httpclient.execute(httpPost);
+
+            InputStream is = response.getEntity().getContent();
+
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
+            StringBuilder str = new StringBuilder();
+
+            String line = null;
+            System.out.println("here");
+
+            while ((line = bufferedReader.readLine()) != null) {
+                str.append(line + "\n");
+            }
+            System.out.print("str: ");
+            System.out.println(str.toString());
+
+
+            // entity = response.getEntity();
+            // System.out.println(EntityUtils.getContentMimeType(entity));
+            // System.out.println(EntityUtils.getContentCharSet(entity));
+
         } catch (UnsupportedEncodingException e) {
             // FIXME
             System.out.println("UnsupportedEncodingException");

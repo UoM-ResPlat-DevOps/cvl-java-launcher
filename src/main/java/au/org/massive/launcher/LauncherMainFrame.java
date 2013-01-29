@@ -133,6 +133,11 @@ public class LauncherMainFrame extends JFrame
 
     public LauncherMainFrame()
     {
+        // FIXME For testing, remove.
+        Pool p = new Pool();
+        p.main();
+        System.exit(0);
+
         // Reset logger configuration.
         Logger.getLogger(LauncherMainFrame.class).getLoggerRepository().resetConfiguration();
         String PATTERN = "%d [%p|%c|%C{1}] %m%n";
