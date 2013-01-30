@@ -71,7 +71,6 @@ public class LauncherMainFrame extends JFrame
     // it won't be written back to LauncherMainFrame by hacking into the
     // TurboVNC classes.
     private static com.turbovnc.vncviewer.VncViewer turboVncViewer = null;
-
     
     private OptionsDialog options;
 
@@ -80,7 +79,7 @@ public class LauncherMainFrame extends JFrame
     // For now, there is exactly one log window, however:
     //   (1) In the future, we might want allow the Launcher 
     //          to have multiple VNC sessions open at once.
-    //   (2) Carlo is designing a new logging system.
+    //   (2) Carlo has designed a new logging system.
     private JFrame launcherLogWindow = new JFrame("MASSIVE/CVL Launcher Log Window");
     private JTextArea launcherLogWindowTextArea = new JTextArea();
     private static Logger logger = Logger.getLogger(LauncherMainFrame.class);
@@ -131,6 +130,9 @@ public class LauncherMainFrame extends JFrame
 
     private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
+    private LauncherMenuBar launcherMainFrameMenuBar = null;
+    private LauncherMenuBar launcherLogWindowMenuBar = null;
+
     public LauncherMainFrame()
     {
         // Reset logger configuration.
@@ -165,6 +167,40 @@ public class LauncherMainFrame extends JFrame
             System.exit(0);
         }
 
+        // Initialize Launcher's main frame
+
+        launcherMainFrame.setTitle("MASSIVE/CVL Launcher");
+        launcherMainFrame.setSize(440,500);
+        launcherMainFrame.setLocationRelativeTo(null);
+        //launcherMainFrame.setLocationByPlatform(true);
+
+        // Initialize menu for Launcher's main frame and log window
+        
+        if (System.getProperty("os.name").startsWith("Mac")) 
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+        launcherMainFrame.launcherMainFrameMenuBar = new LauncherMenuBar(launcherMainFrame);
+        launcherMainFrame.setJMenuBar(launcherMainFrame.launcherMainFrameMenuBar);
+
+        launcherMainFrame.addWindowListener(new WindowAdapter()
+        {
+            public void windowActivated(WindowEvent e)
+            {
+                launcherMainFrame.launcherMainFrameMenuBar.selectLauncherMainFrameInWindowMenu();
+                if (launcherLogWindowMenuBar!=null)
+                    launcherMainFrame.launcherLogWindowMenuBar.selectLauncherMainFrameInWindowMenu();
+            }
+        });
+
+        launcherLogWindow.addWindowListener(new WindowAdapter()
+        {
+            public void windowActivated(WindowEvent e)
+            {
+                launcherMainFrame.launcherMainFrameMenuBar.selectLauncherLogWindowInWindowMenu();
+                if (launcherLogWindowMenuBar!=null)
+                    launcherMainFrame.launcherLogWindowMenuBar.selectLauncherLogWindowInWindowMenu();
+            }
+        });
+
         // Initialize TurboVNC objects, so that we can plug the TurboVNC Options Dialog into the Launcher.
         VncViewer.setLookAndFeel();
         String[] turboVncArguments = new String[] {};
@@ -189,11 +225,6 @@ public class LauncherMainFrame extends JFrame
         cvlVncDisplayResolution = prefs.get("cvlVncDisplayResolution", "");
         cvlSshTunnelCipher = prefs.get("cvlSshTunnelCipher", "");
         cvlUsername = prefs.get("cvlUsername", "");
-
-        setTitle("MASSIVE/CVL Launcher");
-        setSize(440,500);
-        setLocationRelativeTo(null);
-        //setLocationByPlatform(true);
 
         JPanel massivePanel = new JPanel();
         tabbedPane.addTab("MASSIVE", massivePanel);
@@ -310,6 +341,12 @@ public class LauncherMainFrame extends JFrame
                         launcherLogWindow.getContentPane().add(scrollPane, BorderLayout.CENTER);
                         launcherLogWindow.setSize(700,450);
                         launcherLogWindow.setLocationByPlatform(true);
+                        if (System.getProperty("os.name").startsWith("Mac")) 
+                        {
+                            launcherMainFrame.launcherLogWindowMenuBar = new LauncherMenuBar(launcherMainFrame, launcherLogWindow);
+                            launcherMainFrame.launcherMainFrameMenuBar.addLogWindowToWindowsMenu(launcherLogWindow);
+                            launcherLogWindow.setJMenuBar(launcherMainFrame.launcherLogWindowMenuBar);
+                        }
                         launcherLogWindow.setVisible(true);
 
                         //RedirectSystemStreams.redirectSystemStreams(launcherLogWindowTextArea);
@@ -677,9 +714,11 @@ public class LauncherMainFrame extends JFrame
                         catch(Exception e)
                         {
                             if (e instanceof JSchException && e.toString().contains("Auth fail"))
-                                System.out.println("Authentication failed.");
+                                writeToLogWindow(launcherLogWindowTextArea, "Authentication failed.");
+                                //System.out.println("Authentication failed.");
                             else
-                                System.out.println(e);
+                                writeToLogWindow(launcherLogWindowTextArea, e.toString());
+                                //System.out.println(e);
                         }
                     }
                 };
