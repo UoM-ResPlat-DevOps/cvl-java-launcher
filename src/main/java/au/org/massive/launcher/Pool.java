@@ -29,13 +29,12 @@ public class Pool {
     public static void main() {
         try {
             JSONObject jsonObj = new JSONObject();
-            jsonObj.put("queryMessage", "username=jupitertest1");
-            jsonObj.put("query", "Send to user management");
+            jsonObj.put("username", "jupitertest1");
 
             HttpClient httpclient = new DefaultHttpClient();
-            HttpPost httpPost = new HttpPost("https://cvl.massive.org.au/usermanagement/query.php");
+            HttpPost httpPost = new HttpPost("https://cvl.massive.org.au/cvlvm");
 
-            httpPost.setEntity(new StringEntity(jsonObj.toString(), "multipart/form-data", "UTF-8")); // application/x-www-form-urlencoded", "UTF-8"));
+            httpPost.setEntity(new StringEntity(jsonObj.toString(), "application/x-www-form-urlencoded", "UTF-8"));
 
             HttpResponse response = httpclient.execute(httpPost);
 
@@ -45,18 +44,12 @@ public class Pool {
             StringBuilder str = new StringBuilder();
 
             String line = null;
-            System.out.println("here");
 
             while ((line = bufferedReader.readLine()) != null) {
                 str.append(line + "\n");
             }
             System.out.print("str: ");
             System.out.println(str.toString());
-
-
-            // entity = response.getEntity();
-            // System.out.println(EntityUtils.getContentMimeType(entity));
-            // System.out.println(EntityUtils.getContentCharSet(entity));
 
         } catch (UnsupportedEncodingException e) {
             // FIXME
