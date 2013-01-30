@@ -135,7 +135,8 @@ public class LauncherMainFrame extends JFrame
     {
         // FIXME For testing, remove.
         Pool p = new Pool();
-        p.main();
+        String IPs[] = p.getVMList("jupitertest1");
+        System.out.println(IPs.length());
         System.exit(0);
 
         // Reset logger configuration.

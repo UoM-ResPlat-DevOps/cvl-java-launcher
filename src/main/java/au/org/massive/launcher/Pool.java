@@ -22,24 +22,24 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.HTTP;
 
 import org.json.JSONObject;
+import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONTokener;
 
+import java.util.Iterator;
 
 public class Pool {
-    public static void main() {
+    public String[] getVMList (String username) {
         try {
             JSONObject jsonObj = new JSONObject();
-            jsonObj.put("username", "jupitertest1");
+            jsonObj.put("username", "jupitertest1"); // FIXME use 'username'
 
             HttpClient httpclient = new DefaultHttpClient();
             HttpPost httpPost = new HttpPost("https://cvl.massive.org.au/cvlvm");
-
             httpPost.setEntity(new StringEntity(jsonObj.toString(), "application/x-www-form-urlencoded", "UTF-8"));
-
             HttpResponse response = httpclient.execute(httpPost);
 
             InputStream is = response.getEntity().getContent();
-
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
             StringBuilder str = new StringBuilder();
 
@@ -48,9 +48,17 @@ public class Pool {
             while ((line = bufferedReader.readLine()) != null) {
                 str.append(line + "\n");
             }
-            System.out.print("str: ");
-            System.out.println(str.toString());
 
+            JSONTokener tokener = new JSONTokener(str.toString());
+            JSONObject root = new JSONObject(tokener);
+
+            JSONArray VM_IPs = (JSONArray) root.get("VM_IPs");
+            String IPs[] = new String[VM_IPs.length()];
+            for (int i = 0; i < VM_IPs.length(); i++) {
+                IPs[i] = (String) VM_IPs.get(i);
+            }
+
+            return IPs;
         } catch (UnsupportedEncodingException e) {
             // FIXME
             System.out.println("UnsupportedEncodingException");
@@ -61,6 +69,8 @@ public class Pool {
             // FIXME
             System.out.println("IOException");
         }
+
+        return (new String[0]);
     }
 }
       
