@@ -155,17 +155,17 @@ public class LauncherMainFrame extends JFrame
         VersionNumberCheck versionNumberCheck = new VersionNumberCheck();
 
         String versionNumberFromWebPage = new VersionNumberCheck().getVersionNumberFromWebPage();
-        if (!LauncherVersionNumber.javaLauncherVersionNumber.equals(versionNumberFromWebPage))
-        {
-            Icon massiveIcon = new ImageIcon(launcherMainFrameClass.getResource("MASSIVElogoTransparent64x64.png"));
-            String htmlContent = "You are running version " + LauncherVersionNumber.javaLauncherVersionNumber + "<br><br>" +
-                                    "The latest version is " + versionNumberFromWebPage + "<br><br>" +
-                                                "Please download a new version from:<br><br>" +
-                                                "<a href=\"https://www.massive.org.au/userguide/cluster-instructions/massive-launcher\">https://www.massive.org.au/userguide/cluster-instructions/massive-launcher</a>";
+//        if (!LauncherVersionNumber.javaLauncherVersionNumber.equals(versionNumberFromWebPage))
+//        {
+//            Icon massiveIcon = new ImageIcon(launcherMainFrameClass.getResource("MASSIVElogoTransparent64x64.png"));
+//            String htmlContent = "You are running version " + LauncherVersionNumber.javaLauncherVersionNumber + "<br><br>" +
+//                                    "The latest version is " + versionNumberFromWebPage + "<br><br>" +
+//                                                "Please download a new version from:<br><br>" +
+//                                                "<a href=\"https://www.massive.org.au/userguide/cluster-instructions/massive-launcher\">https://www.massive.org.au/userguide/cluster-instructions/massive-launcher</a>";
             //JOptionPane.showMessageDialog(this, message, "MASSIVE/CVL Launcher Error", JOptionPane.ERROR_MESSAGE, massiveIcon);
-            HtmlOptionPane.showMessageDialog(this, htmlContent, "MASSIVE/CVL Launcher Error", JOptionPane.ERROR_MESSAGE, massiveIcon);
-            System.exit(0);
-        }
+//            HtmlOptionPane.showMessageDialog(this, htmlContent, "MASSIVE/CVL Launcher Error", JOptionPane.ERROR_MESSAGE, massiveIcon);
+//            System.exit(0);
+//        }
 
         // Initialize Launcher's main frame
 
@@ -389,25 +389,26 @@ public class LauncherMainFrame extends JFrame
                                 if (!massivePersistentMode)
                                 {
                                     writeToLogWindow(launcherLogWindowTextArea, "Checking whether you have any existing jobs in the Vis node queue...\n");
-                                    remoteCommand = new RemoteCommand("/usr/local/bin/showq -w class:vis -u " + massiveUsername + " | grep " + massiveUsername);
+                                    // remoteCommand = new RemoteCommand("/usr/local/bin/showq -w class:vis -u " + massiveUsername + " | grep " + massiveUsername);
+                                    remoteCommand = new RemoteCommand("sbatch -p cloud-gpu | grep " + massiveUsername);
                                     commandOutput = sendCommand(session, remoteCommand, true, launcherLogWindowTextArea);
-                                    if (remoteCommand.exitCode==0)
-                                    {
-                                        writeToLogWindow(launcherLogWindowTextArea, commandOutput + "\n");
-                                        writeToLogWindow(launcherLogWindowTextArea, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n");
-                                        throw new Exception("Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n");
-                                    }
-                                    else
-                                        writeToLogWindow(launcherLogWindowTextArea, "You don't have any jobs already in the Vis node queue, which is good.\n");
+                                    //if (remoteCommand.exitCode==0)
+                                    //{
+                                    //    writeToLogWindow(launcherLogWindowTextArea, commandOutput + "\n");
+                                    //    writeToLogWindow(launcherLogWindowTextArea, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n");
+                                    //    throw new Exception("Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n");
+                                    //}
+                                    //else
+                                    //    writeToLogWindow(launcherLogWindowTextArea, "You don't have any jobs already in the Vis node queue, which is good.\n");
 
                                     writeToLogWindow(launcherLogWindowTextArea, "\n");
                                 }
 
-                                writeToLogWindow(launcherLogWindowTextArea, "Checking quota...\n");
+                                //writeToLogWindow(launcherLogWindowTextArea, "Checking quota...\n");
 
-                                remoteCommand = new RemoteCommand("mybalance --hours");
-                                commandOutput = sendCommand(session, remoteCommand, true, launcherLogWindowTextArea);
-                                writeToLogWindow(launcherLogWindowTextArea, commandOutput + "\n");
+                                //remoteCommand = new RemoteCommand("mybalance --hours");
+                                //commandOutput = sendCommand(session, remoteCommand, true, launcherLogWindowTextArea);
+                                //writeToLogWindow(launcherLogWindowTextArea, commandOutput + "\n");
 
                                 if (massiveHost.startsWith("m2"))
                                 {
@@ -438,45 +439,56 @@ public class LauncherMainFrame extends JFrame
                                 //  request_visnode.sh should run qstat (to monitor whether the job has started)
                                 //  and qpeek to get the output from the job once it has started.
                                 //  The Launcher is using False False, because it will run qstat and qpeek later.
-                                RemoteCommand qsubCommand = new RemoteCommand("/usr/local/desktop/request_visnode.sh " + massiveProject + " " + massiveHoursRequested + " " + massiveVisNodesRequested + " " + (massivePersistentMode?"True":"True") + " False False");
+                                //RemoteCommand qsubCommand = new RemoteCommand("/usr/local/desktop/request_visnode.sh " + massiveProject + " " + massiveHoursRequested + " " + massiveVisNodesRequested + " " + (massivePersistentMode?"True":"True") + " False False");
+                                RemoteCommand qsubCommand = new RemoteCommand("mkdir ~/.vnc ; /usr/local/resplat/strudel/xfce_check_setup.sh ; rm -f ~/.vnc/clearpass ; touch ~/.vnc/clearpass ; chmod 600 ~/.vnc/clearpass ; passwd=$( dd if=/dev/urandom bs=1 count=8 2>/dev/null | md5sum | cut -b 1-8 ) ; echo $passwd > ~/.vnc/clearpass ; cat ~/.vnc/clearpass | vncpasswd -f > ~/.vnc/passwd ; chmod 600 ~/.vnc/passwd ; export PATH=\"'$'\"PATH:/bin ; echo -e '#!/bin/bash\\n vncserver -geometry " + massiveVncDisplayResolution + " ;\\n mkdir /run/user/`id -u`/dconf ; \\n  sleep 36000 ' |  /usr/local/slurm/latest/bin/sbatch -p cloud-gpu --ntasks " + massiveVisNodesRequested + " --time=" + massiveHoursRequested  + ":00:00 -J desktop_" + massiveUsername + " -o .vnc/slurm-%j.out");
                                 sendCommand(session, qsubCommand, true, launcherLogWindowTextArea); 
-                                String[] qsubOutput = qsubCommand.getStdout().split("\n");
-                                massiveJobNumberWithServer = qsubOutput[1];
+                                String qsubOutput = qsubCommand.getStdout().replace("Submitted batch job ", "");
+                                massiveJobNumber = qsubOutput.trim();
 
                                 writeToLogWindow(launcherLogWindowTextArea, "\n");
+                                //writeToLogWindow(launcherLogWindowTextArea, "stderr: " + qsubCommand.getStderr());
+                                //writeToLogWindow(launcherLogWindowTextArea, "stdout: " + qsubCommand.getStdout());
 
-                                writeToLogWindow(launcherLogWindowTextArea, "MASSIVE job number: " + massiveJobNumberWithServer + "\n");
+                                writeToLogWindow(launcherLogWindowTextArea, "MASSIVE job number: " + massiveJobNumber + "\n");
 
-                                if (massiveJobNumberWithServer.contains("."))
-                                {
-                                    String[] massiveJobNumberWithServerComponents = massiveJobNumberWithServer.split("\\.");
-                                    massiveJobNumber = massiveJobNumberWithServerComponents[0];
-                                }
-                                else
-                                {
-                                    writeToLogWindow(launcherLogWindowTextArea, "Malformed MASSIVE job number.\n");
-                                    throw new Exception("Malformed MASSIVE job number.");
-                                }
+                                //if (massiveJobNumberWithServer.contains("."))
+                                //{
+                                //    String[] massiveJobNumberWithServerComponents = massiveJobNumberWithServer.split("\\.");
+                                //    massiveJobNumber = massiveJobNumberWithServerComponents[0];
+                                //}
+                                //else
+                                //{
+                                //    writeToLogWindow(launcherLogWindowTextArea, "Malformed MASSIVE job number.\n");
+                                //    throw new Exception("Malformed MASSIVE job number.");
+                                //}
 
                                 writeToLogWindow(launcherLogWindowTextArea, "\nWaiting for vis node(s)");
 
                                 writeToLogWindow(launcherLogWindowTextArea, ".");
-                                RemoteCommand qstatCommand = new RemoteCommand("qstat  -f " + massiveJobNumber + " | grep exec_host");
+                                //2018-03-28 - DT Modified for Spartan
+                                //RemoteCommand qstatCommand = new RemoteCommand("qstat  -f " + massiveJobNumber + " | grep exec_host");
+                                RemoteCommand qstatCommand = new RemoteCommand("scontrol show job  " + massiveJobNumber + " | grep BatchHost");
                                 String execHostString = sendCommand(session, qstatCommand, false, launcherLogWindowTextArea);
                                 //if (qstatCommand.getExitCode()==0)
                                     //writeToLogWindow(launcherLogWindowTextArea, execHostString + "\n");
-                                while (qstatCommand.getExitCode()!=0)
+                                //while (qstatCommand.getExitCode()!=0)
+                                while(qstatCommand.getStdout().length() < 1)
                                 {
                                     Thread.sleep(1000);
                                     writeToLogWindow(launcherLogWindowTextArea, ".");
-                                    qstatCommand = new RemoteCommand("qstat  -f " + massiveJobNumber + " | grep exec_host");
+                                    qstatCommand = new RemoteCommand("scontrol show job " + massiveJobNumber + " | grep BatchHost");
                                     execHostString = sendCommand(session, qstatCommand, false, launcherLogWindowTextArea);
                                 }
                                 writeToLogWindow(launcherLogWindowTextArea, "\n\n");
+                                //writeToLogWindow(launcherLogWindowTextArea, "stdout" + qstatCommand.getStdout());
+                                //writeToLogWindow(launcherLogWindowTextArea, "stderr" + qstatCommand.getStderr());
 
-                                if (execHostString.contains("exec_host = "))
+                                //2018-03-28 - DT Modified for Spartan
+                                //if (execHostString.contains("exec_host = "))
+                                if (execHostString.contains("BatchHost="))
                                 {
-                                    String[] execHostStringComponents = execHostString.split("exec_host = ");
+                                    //String[] execHostStringComponents = execHostString.split("exec_host = ");
+                                    String[] execHostStringComponents = execHostString.split("BatchHost=");
                                     execHostString = execHostStringComponents[1];
                                     execHostStringComponents = execHostString.split("\\/");
                                     massiveVisNode = execHostStringComponents[0];
@@ -536,33 +548,41 @@ public class LauncherMainFrame extends JFrame
                             // SSH tunnel
 
                             // TurboVNC options:
-                            turboVncConnection.opts.tunnel = true;
-                            if (massiveTabSelected)
-                                turboVncConnection.opts.cipher = massiveSshTunnelCipher;
-                            if (cvlTabSelected)
-                                turboVncConnection.opts.cipher = cvlSshTunnelCipher;
+                            //turboVncConnection.opts.tunnel = true;
+                            //if (massiveTabSelected)
+                            //    turboVncConnection.opts.cipher = massiveSshTunnelCipher;
+                            //if (cvlTabSelected)
+                            //    turboVncConnection.opts.cipher = cvlSshTunnelCipher;
 
-                            if (massiveTabSelected)
-                            {
-                                turboVncConnection.opts.serverName = massiveHost + ":1";
-                                turboVncConnection.opts.remoteServerName = massiveVisNode;
-                                turboVncConnection.opts.port = 5901;
-                                turboVncConnection.opts.username = massiveUsername;
-                                turboVncConnection.opts.password = massivePassword;
-                            }
+                            //if (massiveTabSelected)
+                            //{
+                            //    turboVncConnection.opts.serverName = massiveHost + ":1";
+                            //    turboVncConnection.opts.remoteServerName = massiveVisNode;
+                            //    turboVncConnection.opts.port = 5901;
+                            //    turboVncConnection.opts.username = massiveUsername;
+                            //    turboVncConnection.opts.password = massivePassword;
+                            //}
 
-                            if (cvlTabSelected)
-                            {
-                                turboVncConnection.opts.serverName = cvlHost + ":" + cvlVncDisplayNumber;
-                                turboVncConnection.opts.remoteServerName = "localhost";
-                                turboVncConnection.opts.port = 5900 + Integer.valueOf(cvlVncDisplayNumber);
-                                turboVncConnection.opts.username = cvlUsername;
-                                turboVncConnection.opts.password = cvlPassword;
-                            }
+                            //if (cvlTabSelected)
+                            //{
+                            //    turboVncConnection.opts.serverName = cvlHost + ":" + cvlVncDisplayNumber;
+                            //    turboVncConnection.opts.remoteServerName = "localhost";
+                            //    turboVncConnection.opts.port = 5900 + Integer.valueOf(cvlVncDisplayNumber);
+                            //   turboVncConnection.opts.username = cvlUsername;
+                            //    turboVncConnection.opts.password = cvlPassword;
+                            //}
 
-                            writeToLogWindow(launcherLogWindowTextArea, "\nAttempting to create tunnel using TurboVNC's tunnel class.");
+                            //writeToLogWindow(launcherLogWindowTextArea, "\nAttempting to create tunnel using TurboVNC's tunnel class.");
 
-                            Tunnel.createTunnel(turboVncConnection.opts);
+                            //Tunnel.createTunnel(turboVncConnection.opts);
+                            int tunnelRemotePort =  5900 + Integer.valueOf(cvlVncDisplayNumber);
+                            int tunnelLocalPort = 5901;
+
+                           //TODO - fix up this reverse tunnel & then be pleasantly surprised that vnc just works  
+                            
+                            remoteCommand = new RemoteCommand ("ssh -A -c " + massiveSshTunnelCipher +" -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} \"echo tunnel_hello; bash\""")
+
+
 
                             for (int i=0; i<5; i++)
                             {
@@ -572,7 +592,8 @@ public class LauncherMainFrame extends JFrame
 
                             writeToLogWindow(launcherLogWindowTextArea, "\n");
 
-                            writeToLogWindow(launcherLogWindowTextArea, "Created tunnel using TurboVNC's tunnel class.\n");
+                            //writeToLogWindow(launcherLogWindowTextArea, "Created tunnel using TurboVNC's tunnel class.\n");
+                            writeToLogWindow(launcherLogWindowTextArea, "Created tunnel using ssh\n");
 
                             writeToLogWindow(launcherLogWindowTextArea, "Local port = " + turboVncConnection.opts.tunnelLocalPort + "\n");
                             writeToLogWindow(launcherLogWindowTextArea, "Remote port = " + turboVncConnection.opts.port + "\n");
@@ -744,6 +765,7 @@ public class LauncherMainFrame extends JFrame
 
         massivePanel.add(new JLabel("Host"), cc.xy(2,2));
         String massiveHosts[] = {
+            "spartan.hpc.unimelb.edu.au",
             "m1-login1.massive.org.au",
             "m1-login2.massive.org.au",
             "m2-login1.massive.org.au",
